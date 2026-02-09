@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import api from '../services/api';
 import { Question } from '../../types';
 
 const Quiz: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const accessCode = (location.state as any)?.accessCode || '';
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [history, setHistory] = useState<number[]>([]);
     const [answers, setAnswers] = useState<{ questionId: number, value: string }[]>([]);
@@ -75,7 +77,7 @@ const Quiz: React.FC = () => {
                     // Call API to create report
                     // Ensure we pass final state of answers (including current one)
                     const finalAnswers = [...filtered, newAnswer];
-                    const reportData = await api.createReport(finalAnswers);
+                    const reportData = await api.createReport(finalAnswers, accessCode);
 
                     // Navigate to Result with ID
                     navigate(`/result/${reportData.id}`);

@@ -18,7 +18,13 @@ const Home: React.FC = () => {
         try {
             const result = await api.verifyAccessCode(code);
             if (result.valid) {
-                navigate('/quiz');
+                if (result.reportId) {
+                    // 已使用的码，直接跳到报告页
+                    navigate(`/result/${result.reportId}`);
+                } else {
+                    // 新码，进入答题页（传递 code 供 createReport 关联）
+                    navigate('/quiz', { state: { accessCode: code } });
+                }
             } else {
                 setErrorMsg(result.message || '验证失败');
             }

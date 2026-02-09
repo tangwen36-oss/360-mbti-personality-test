@@ -426,7 +426,7 @@ export async function getReport(mbtiType: string): Promise<ReportContent | null>
 /**
  * 提交测试结果
  */
-export async function createReport(answers: { questionId: number, value: string }[]): Promise<any> {
+export async function createReport(answers: { questionId: number, value: string }[], accessCode?: string): Promise<any> {
     try {
 
 
@@ -780,6 +780,14 @@ export async function createReport(answers: { questionId: number, value: string 
             .single();
 
         if (error) throw error;
+
+        // 将报告 ID 回写到 access_codes（如果有邀请码）
+        if (accessCode && data?.id) {
+            await supabase
+                .from('access_codes')
+                .update({ report_id: data.id })
+                .eq('code', accessCode.trim().toUpperCase());
+        }
 
         return data;
 
@@ -1601,7 +1609,7 @@ function getCalibrationConclusion(
  * 3. is_used=true → 已使用
  * 4. 通过 → 核销（is_used=true, used_at=now）
  */
-async function verifyAccessCode(code: string): Promise<{ valid: boolean; message?: string }> {
+async function verifyAccessCode(code: string): Promise<{ valid: boolean; message?: string; reportId?: string }> {
     try {
         const trimmed = code.trim().toUpperCase();
         if (!trimmed) return { valid: false, message: '请输入邀请码' };
@@ -1609,7 +1617,7 @@ async function verifyAccessCode(code: string): Promise<{ valid: boolean; message
         // 查询
         const { data, error } = await supabase
             .from('access_codes')
-            .select('id, is_used')
+            .select('id, is_used, report_id')
             .eq('code', trimmed)
             .single();
 
@@ -1618,6 +1626,10 @@ async function verifyAccessCode(code: string): Promise<{ valid: boolean; message
         }
 
         if (data.is_used) {
+            // 已使用但有关联报告 → 返回报告 ID，让前端直接跳转
+            if (data.report_id) {
+                return { valid: true, reportId: data.report_id };
+            }
             return { valid: false, message: '该邀请码已被使用' };
         }
 
