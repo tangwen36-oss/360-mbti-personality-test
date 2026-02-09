@@ -45,6 +45,14 @@
         background-color: #FDFBF7;
         color: #1A1A1A;
         -webkit-font-smoothing: antialiased;
+        /* 防止微信/系统字体缩放 */
+        -webkit-text-size-adjust: 100% !important;
+        text-size-adjust: 100% !important;
+      }
+      /* 分享卡片强制锁定字体大小 */
+      #share-card-node, #share-card-node * {
+        -webkit-text-size-adjust: 100% !important;
+        text-size-adjust: 100% !important;
       }
       /* Hide scrollbar for cleaner look */
       ::-webkit-scrollbar {
