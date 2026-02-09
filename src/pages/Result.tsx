@@ -112,6 +112,11 @@ const Result: React.FC = () => {
                         clonedNode.style.top = '0';
                         clonedNode.style.display = 'flex'; // 确保是 flex 布局
                     }
+                    // ✅ 锁定字体大小，防止系统字体缩放影响截图
+                    const html = clonedDoc.documentElement;
+                    html.style.fontSize = '16px';
+                    html.style.setProperty('-webkit-text-size-adjust', '100%', 'important');
+                    html.style.setProperty('text-size-adjust', '100%', 'important');
                 }
             });
 
