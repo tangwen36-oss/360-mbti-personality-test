@@ -234,6 +234,27 @@ const PeerAssessment: React.FC = () => {
                                 </div>
                             </button>
                         </div>
+
+                        {/* 底部返回按钮 - 与自测页面一致 */}
+                        <div className="mt-10">
+                            {currentQuestionIndex > 0 ? (
+                                <button
+                                    onClick={handleBack}
+                                    className="w-full py-4 rounded-xl border border-dashed border-gray-300 text-gray-400 hover:text-brand-text hover:border-brand-text/30 hover:bg-white transition-all text-sm flex items-center justify-center gap-2 group"
+                                >
+                                    <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                                    返回上一题
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => setViewState('welcome')}
+                                    className="w-full py-4 text-gray-300 hover:text-gray-400 transition-colors text-xs flex items-center justify-center gap-1"
+                                >
+                                    <ChevronLeft size={14} />
+                                    返回首页
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
