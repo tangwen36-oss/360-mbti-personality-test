@@ -1651,6 +1651,24 @@ async function verifyAccessCode(code: string): Promise<{ valid: boolean; message
     }
 }
 
+/**
+ * 检查他测是否已完成
+ */
+async function checkPeerCompleted(reportId: string): Promise<boolean> {
+    try {
+        const { data, error } = await supabase
+            .from('personality_reports')
+            .select('content')
+            .eq('id', reportId)
+            .single();
+
+        if (error || !data) return false;
+        return data.content?.perception?.peer_view != null;
+    } catch {
+        return false;
+    }
+}
+
 export const api = {
     fetchQuestions,
     fetchPeerQuestions,
@@ -1658,7 +1676,8 @@ export const api = {
     createReport,
     getReportById,
     submitPeerAssessment,
-    verifyAccessCode
+    verifyAccessCode,
+    checkPeerCompleted
 };
 
 export default api;

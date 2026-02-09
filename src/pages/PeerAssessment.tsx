@@ -61,6 +61,15 @@ const PeerAssessment: React.FC = () => {
         loadQuestions();
     }, []);
 
+    // 检查他测是否已完成
+    useEffect(() => {
+        if (id) {
+            api.checkPeerCompleted(id).then((completed) => {
+                if (completed) setViewState('completed');
+            });
+        }
+    }, [id]);
+
     // 开始答题
     const handleStart = () => {
         if (!token.trim()) {
