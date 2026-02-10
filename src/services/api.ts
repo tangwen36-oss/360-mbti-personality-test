@@ -430,60 +430,64 @@ export async function createReport(answers: { questionId: number, value: string 
     try {
 
 
-        // 1. 算分逻辑（支持加权格式，如 "E:0.5"，兼容旧格式 "E" 默认权重1）
-        const scores: Record<string, number> = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+        // ========== 1. 荣格八维认知功能计分 ==========
+        const scores: Record<string, number> = {
+            Se: 0, Si: 0, Ne: 0, Ni: 0, Te: 0, Ti: 0, Fe: 0, Fi: 0
+        };
         answers.forEach((ans) => {
-            const val = ans.value;
-            if (val.includes(':')) {
-                // 加权格式: "E:0.5"
-                const [letter, w] = val.split(':');
-                if (scores[letter] !== undefined) {
-                    scores[letter] += parseFloat(w);
+            // 支持复合格式: "Se:0.5,Si:0.5" 或单值 "Te:1"
+            const parts = ans.value.split(',');
+            parts.forEach(part => {
+                const trimmed = part.trim();
+                if (trimmed.includes(':')) {
+                    const [func, w] = trimmed.split(':');
+                    if (scores[func] !== undefined) {
+                        scores[func] += parseFloat(w);
+                    }
                 }
-            } else {
-                // 旧格式: "E" → 权重1
-                if (scores[val] !== undefined) {
-                    scores[val]++;
-                }
-            }
+            });
         });
 
-        // 平分时默认取: I / S / T / J
-        const dim1 = scores.E > scores.I ? 'E' : 'I';
-        const dim2 = scores.S >= scores.N ? 'S' : 'N';
-        const dim3 = scores.T >= scores.F ? 'T' : 'F';
-        const dim4 = scores.J >= scores.P ? 'J' : 'P';
-        const mbtiType = `${dim1}${dim2}${dim3}${dim4}`;
-
-        // ✅ 雷达图数据（固定值查表，按 MBTI 类型）
-        // 顺序：连接 → 共振 → 想象 → 判断 → 稳定 → 行动
-        const radarLookup: Record<string, number[]> = {
-            // [连接力, 共振力, 想象力, 判断力, 稳定力, 行动力]
-            'ENFP': [86, 88, 88, 52, 50, 84],
-            'ENTP': [88, 50, 86, 82, 52, 86],
-            'ESFP': [90, 84, 52, 50, 48, 88],
-            'ESTP': [88, 48, 50, 84, 50, 90],
-            'INFJ': [50, 88, 90, 54, 86, 52],
-            'INFP': [52, 90, 88, 50, 52, 48],
-            'ISFP': [54, 86, 52, 48, 50, 50],
-            'ISTP': [52, 48, 50, 88, 52, 54],
-            'ENFJ': [88, 88, 84, 54, 84, 86],
-            'ENTJ': [86, 50, 82, 90, 88, 90],
-            'ESFJ': [90, 86, 54, 52, 86, 84],
-            'ESTJ': [88, 48, 52, 88, 90, 90],
-            'INTJ': [50, 50, 90, 88, 88, 54],
-            'INTP': [52, 48, 88, 86, 52, 50],
-            'ISFJ': [54, 88, 52, 50, 90, 52],
-            'ISTJ': [52, 48, 50, 90, 90, 54],
+        // ========== 2. 功能栈加权匹配定型 ==========
+        const FUNCTION_STACKS: Record<string, string[]> = {
+            'INTJ': ['Ni', 'Te', 'Fi', 'Se'], 'INFJ': ['Ni', 'Fe', 'Ti', 'Se'],
+            'ENTJ': ['Te', 'Ni', 'Se', 'Fi'], 'ENFJ': ['Fe', 'Ni', 'Se', 'Ti'],
+            'INTP': ['Ti', 'Ne', 'Si', 'Fe'], 'INFP': ['Fi', 'Ne', 'Si', 'Te'],
+            'ENTP': ['Ne', 'Ti', 'Fe', 'Si'], 'ENFP': ['Ne', 'Fi', 'Te', 'Si'],
+            'ISTJ': ['Si', 'Te', 'Fi', 'Ne'], 'ISFJ': ['Si', 'Fe', 'Ti', 'Ne'],
+            'ESTJ': ['Te', 'Si', 'Ne', 'Fi'], 'ESFJ': ['Fe', 'Si', 'Ne', 'Ti'],
+            'ISTP': ['Ti', 'Se', 'Ni', 'Fe'], 'ISFP': ['Fi', 'Se', 'Ni', 'Te'],
+            'ESTP': ['Se', 'Ti', 'Fe', 'Ni'], 'ESFP': ['Se', 'Fi', 'Te', 'Ni'],
         };
-        const radarValues = radarLookup[mbtiType] || [50, 50, 50, 50, 50, 50];
+        const STACK_WEIGHTS = [4, 3, 2, 1]; // 主导 × 4, 辅助 × 3, 第三 × 2, 劣势 × 1
+
+        let mbtiType = 'ISTJ';
+        let bestScore = -Infinity;
+        for (const [type, stack] of Object.entries(FUNCTION_STACKS)) {
+            let typeScore = 0;
+            stack.forEach((func, i) => {
+                typeScore += (scores[func] || 0) * STACK_WEIGHTS[i];
+            });
+            if (typeScore > bestScore) {
+                bestScore = typeScore;
+                mbtiType = type;
+            }
+        }
+
+        // ========== 3. 雷达图（8轴真实得分，归一化） ==========
+        // 各函数最高可能得分（根据40题计算）
+        const MAX_SCORES: Record<string, number> = {
+            Se: 8, Si: 11.5, Ne: 8.5, Ni: 10.5, Te: 14.5, Ti: 9.5, Fe: 12, Fi: 12
+        };
         const radarData = [
-            { axis: '连接力', value: radarValues[0] },
-            { axis: '共振力', value: radarValues[1] },
-            { axis: '想象力', value: radarValues[2] },
-            { axis: '判断力', value: radarValues[3] },
-            { axis: '稳定力', value: radarValues[4] },
-            { axis: '行动力', value: radarValues[5] },
+            { axis: 'Se 体验力', value: Math.round((scores.Se / MAX_SCORES.Se) * 100) },
+            { axis: 'Si 经验力', value: Math.round((scores.Si / MAX_SCORES.Si) * 100) },
+            { axis: 'Ne 脑洞力', value: Math.round((scores.Ne / MAX_SCORES.Ne) * 100) },
+            { axis: 'Ni 洞察力', value: Math.round((scores.Ni / MAX_SCORES.Ni) * 100) },
+            { axis: 'Te 执行力', value: Math.round((scores.Te / MAX_SCORES.Te) * 100) },
+            { axis: 'Ti 分析力', value: Math.round((scores.Ti / MAX_SCORES.Ti) * 100) },
+            { axis: 'Fe 共情力', value: Math.round((scores.Fe / MAX_SCORES.Fe) * 100) },
+            { axis: 'Fi 信念力', value: Math.round((scores.Fi / MAX_SCORES.Fi) * 100) },
         ];
 
         // ✅ 人格底色文案（按 MBTI 类型查表）
