@@ -475,19 +475,18 @@ export async function createReport(answers: { questionId: number, value: string 
         }
 
         // ========== 3. 雷达图（8轴真实得分，归一化） ==========
-        // 各函数最高可能得分（根据40题计算）
-        const MAX_SCORES: Record<string, number> = {
-            Se: 8, Si: 11.5, Ne: 8.5, Ni: 10.5, Te: 14.5, Ti: 9.5, Fe: 12, Fi: 12
-        };
+        // 用用户自身最高分做归一化基准，最强功能 ≈ 90%
+        const maxUserScore = Math.max(...Object.values(scores), 0.1);
+        // 顺序：外倾/内倾交替，对角为同类（Se↔Si, Ne↔Ni, Te↔Ti, Fe↔Fi）
         const radarData = [
-            { axis: 'Se 体验力', value: Math.round((scores.Se / MAX_SCORES.Se) * 100) },
-            { axis: 'Si 经验力', value: Math.round((scores.Si / MAX_SCORES.Si) * 100) },
-            { axis: 'Ne 脑洞力', value: Math.round((scores.Ne / MAX_SCORES.Ne) * 100) },
-            { axis: 'Ni 洞察力', value: Math.round((scores.Ni / MAX_SCORES.Ni) * 100) },
-            { axis: 'Te 执行力', value: Math.round((scores.Te / MAX_SCORES.Te) * 100) },
-            { axis: 'Ti 分析力', value: Math.round((scores.Ti / MAX_SCORES.Ti) * 100) },
-            { axis: 'Fe 共情力', value: Math.round((scores.Fe / MAX_SCORES.Fe) * 100) },
-            { axis: 'Fi 信念力', value: Math.round((scores.Fi / MAX_SCORES.Fi) * 100) },
+            { axis: 'Se 体验力', value: Math.round((scores.Se / maxUserScore) * 90) },
+            { axis: 'Ne 脑洞力', value: Math.round((scores.Ne / maxUserScore) * 90) },
+            { axis: 'Te 执行力', value: Math.round((scores.Te / maxUserScore) * 90) },
+            { axis: 'Fe 共情力', value: Math.round((scores.Fe / maxUserScore) * 90) },
+            { axis: 'Si 经验力', value: Math.round((scores.Si / maxUserScore) * 90) },
+            { axis: 'Ni 洞察力', value: Math.round((scores.Ni / maxUserScore) * 90) },
+            { axis: 'Ti 分析力', value: Math.round((scores.Ti / maxUserScore) * 90) },
+            { axis: 'Fi 信念力', value: Math.round((scores.Fi / maxUserScore) * 90) },
         ];
 
         // ✅ 人格底色文案（按 MBTI 类型查表）

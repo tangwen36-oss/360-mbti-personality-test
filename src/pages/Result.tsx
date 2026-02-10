@@ -333,7 +333,7 @@ const Result: React.FC = () => {
                     <div className="space-y-4">
                         {/* 互补成长 */}
                         <div className="flex items-start gap-3 pb-3 border-b border-gray-50">
-                            <div className="px-2 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded border border-purple-100 text-center shrink-0 whitespace-nowrap">
+                            <div className="w-[120px] px-2 py-1 bg-purple-50 text-purple-700 text-xs font-bold rounded border border-purple-100 text-center shrink-0 whitespace-nowrap">
                                 {report.social.soulmate.type}
                             </div>
                             <div>
@@ -344,7 +344,7 @@ const Result: React.FC = () => {
 
                         {/* 默契同频 */}
                         <div className="flex items-start gap-3 pb-3 border-b border-gray-50">
-                            <div className="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded border border-blue-100 text-center shrink-0 whitespace-nowrap">
+                            <div className="w-[120px] px-2 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded border border-blue-100 text-center shrink-0 whitespace-nowrap">
                                 {report.social.partner.type}
                             </div>
                             <div>
@@ -355,7 +355,7 @@ const Result: React.FC = () => {
 
                         {/* 摩擦内耗 */}
                         <div className="flex items-start gap-3">
-                            <div className="px-2 py-1 bg-red-50 text-red-700 text-xs font-bold rounded border border-red-100 text-center shrink-0 whitespace-nowrap">
+                            <div className="w-[120px] px-2 py-1 bg-red-50 text-red-700 text-xs font-bold rounded border border-red-100 text-center shrink-0 whitespace-nowrap">
                                 {report.social.conflict.type}
                             </div>
                             <div>
