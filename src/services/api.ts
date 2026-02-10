@@ -430,16 +430,26 @@ export async function createReport(answers: { questionId: number, value: string 
     try {
 
 
-        // 1. 算分逻辑
+        // 1. 算分逻辑（支持加权格式，如 "E:0.5"，兼容旧格式 "E" 默认权重1）
         const scores: Record<string, number> = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
         answers.forEach((ans) => {
             const val = ans.value;
-            if (scores[val] !== undefined) {
-                scores[val]++;
+            if (val.includes(':')) {
+                // 加权格式: "E:0.5"
+                const [letter, w] = val.split(':');
+                if (scores[letter] !== undefined) {
+                    scores[letter] += parseFloat(w);
+                }
+            } else {
+                // 旧格式: "E" → 权重1
+                if (scores[val] !== undefined) {
+                    scores[val]++;
+                }
             }
         });
 
-        const dim1 = scores.E >= scores.I ? 'E' : 'I';
+        // 平分时默认取: I / S / T / J
+        const dim1 = scores.E > scores.I ? 'E' : 'I';
         const dim2 = scores.S >= scores.N ? 'S' : 'N';
         const dim3 = scores.T >= scores.F ? 'T' : 'F';
         const dim4 = scores.J >= scores.P ? 'J' : 'P';
