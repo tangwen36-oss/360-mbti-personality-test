@@ -794,12 +794,12 @@ export async function createReport(answers: { questionId: number, value: string 
 
         if (error) throw error;
 
-        // 将报告 ID 回写到 access_codes（如果有邀请码）
+        // 将报告 ID 回写到 access_codes 并标记为已使用（核销时机：报告生成成功后）
         if (accessCode && data?.id) {
             await supabase
                 .from('access_codes')
-                .update({ report_id: data.id })
-                .eq('code', accessCode.trim().toUpperCase());
+                .update({ report_id: data.id, is_used: true, used_at: new Date().toISOString() })
+                .eq('code', accessCode.trim());
         }
 
         return data;
@@ -1574,17 +1574,7 @@ async function verifyAccessCode(code: string): Promise<{ valid: boolean; message
             return { valid: false, message: '该邀请码已被使用' };
         }
 
-        // 核销
-        const { error: updateError } = await supabase
-            .from('access_codes')
-            .update({ is_used: true, used_at: new Date().toISOString() })
-            .eq('id', data.id);
-
-        if (updateError) {
-            console.error('[API] 核销邀请码失败:', updateError);
-            return { valid: false, message: '系统错误，请稍后再试' };
-        }
-
+        // 验证通过，不核销（核销延迟到 createReport 成功后）
         return { valid: true };
     } catch (err) {
         console.error('[API] verifyAccessCode 异常:', err);
