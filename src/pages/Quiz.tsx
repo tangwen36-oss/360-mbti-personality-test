@@ -145,7 +145,7 @@ const Quiz: React.FC = () => {
                 <span className="text-xs font-bold text-brand-pink mb-6 tracking-widest uppercase">
                     Question 0{currentQuestionIndex + 1}
                 </span>
-                <h2 className="text-2xl font-serif font-bold leading-relaxed text-brand-text mb-12">
+                <h2 className="text-xl font-serif font-bold leading-relaxed text-brand-text mb-12">
                     {question.text}
                 </h2>
 
@@ -156,7 +156,7 @@ const Quiz: React.FC = () => {
                             onClick={() => handleOptionSelect(idx)}
                             className="w-full text-left p-5 bg-white rounded-xl shadow-card border border-transparent hover:border-brand-pink/30 hover:shadow-md transition-all active:scale-[0.99] group"
                         >
-                            <span className="text-sm text-gray-600 group-hover:text-brand-pink transition-colors">
+                            <span className="text-[15px] text-gray-600 group-hover:text-brand-pink transition-colors">
                                 {opt}
                             </span>
                         </button>
