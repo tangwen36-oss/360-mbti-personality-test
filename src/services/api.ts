@@ -1552,7 +1552,7 @@ function getCalibrationConclusion(
  */
 async function verifyAccessCode(code: string): Promise<{ valid: boolean; message?: string; reportId?: string }> {
     try {
-        const trimmed = code.trim().toUpperCase();
+        const trimmed = code.trim();
         if (!trimmed) return { valid: false, message: '请输入邀请码' };
 
         // 查询
