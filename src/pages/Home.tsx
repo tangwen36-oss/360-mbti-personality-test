@@ -60,7 +60,7 @@ const Home: React.FC = () => {
 
             {/* Main Title */}
             <h1 className="text-2xl font-serif font-bold text-brand-text mb-3 text-center leading-tight whitespace-nowrap">
-                360° MBTI 人格测试
+                多维 MBTI 人格测试
             </h1>
 
             {/* Subtitle */}

@@ -632,7 +632,7 @@ const Result: React.FC = () => {
 
                                         {/* Description Body */}
                                         <div className="mb-6 bg-white/5 p-4 rounded-xl border border-white/5">
-                                            <p className="text-xs leading-relaxed text-gray-300 text-justify">
+                                            <p className="text-sm font-serif leading-relaxed text-gray-300 text-justify">
                                                 {conclusion?.desc}
                                             </p>
                                         </div>
@@ -643,7 +643,7 @@ const Result: React.FC = () => {
                                                 <Lightbulb size={14} />
                                                 <p className="text-[10px] font-bold uppercase tracking-wider">建议 Suggestion</p>
                                             </div>
-                                            <p className="text-xs leading-relaxed text-gray-200">
+                                            <p className="text-sm font-serif leading-relaxed text-gray-200">
                                                 {conclusion?.suggestion}
                                             </p>
                                         </div>
@@ -665,7 +665,7 @@ const Result: React.FC = () => {
                             className={`py-2.5 text-xs font-bold rounded-lg transition-all border flex flex-row items-center justify-center gap-1.5 active:scale-[0.98] ${reportMode === 'self' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
                         >
                             <ScanFace size={14} className={reportMode === 'self' ? 'text-white' : 'text-gray-400'} />
-                            自测报告
+                            自我认知报告
                         </button>
 
                         {/* 2. View Calibration Report */}
@@ -674,7 +674,7 @@ const Result: React.FC = () => {
                             className={`py-2.5 text-xs font-bold rounded-lg transition-all border flex flex-row items-center justify-center gap-1.5 active:scale-[0.98] ${reportMode === 'calibration' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
                         >
                             <GitCompare size={14} className={reportMode === 'calibration' ? 'text-white' : 'text-gray-400'} />
-                            校准报告
+                            解锁校准报告
                         </button>
                     </div>
 
