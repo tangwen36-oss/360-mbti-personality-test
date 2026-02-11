@@ -226,7 +226,7 @@ const Result: React.FC = () => {
                             </p>
                             <ul className="space-y-3">
                                 {report.talent.strengths.map((s, i) => (
-                                    <li key={i} className="text-xs text-brand-text font-medium leading-normal bg-orange-50/50 p-2 rounded-lg border border-orange-100">
+                                    <li key={i} className="text-sm text-brand-text font-medium leading-normal bg-orange-50/50 p-2 rounded-lg border border-orange-100">
                                         {s}
                                     </li>
                                 ))}
@@ -238,7 +238,7 @@ const Result: React.FC = () => {
                             </p>
                             <ul className="space-y-3">
                                 {report.talent.weaknesses.map((w, i) => (
-                                    <li key={i} className="text-xs text-gray-500 font-medium leading-normal bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                    <li key={i} className="text-sm text-gray-500 font-medium leading-normal bg-gray-50 p-2 rounded-lg border border-gray-100">
                                         {w}
                                     </li>
                                 ))}
@@ -256,12 +256,12 @@ const Result: React.FC = () => {
                             <Scale size={16} className="text-brand-pink" />
                             <h3 className="text-sm font-bold">决策：{report.dimensions.decision.title}</h3>
                         </div>
-                        <p className="text-xs leading-6 text-gray-600 mb-3 text-justify">
+                        <p className="text-sm leading-6 text-gray-600 mb-3 text-justify">
                             {report.dimensions.decision.content}
                         </p>
                         <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex gap-2">
                             <ShieldAlert size={14} className="text-gray-400 shrink-0 mt-0.5" />
-                            <p className="text-[10px] text-gray-500 leading-relaxed">
+                            <p className="text-xs text-gray-500 leading-relaxed">
                                 {report.dimensions.decision.limit}
                             </p>
                         </div>
@@ -273,12 +273,12 @@ const Result: React.FC = () => {
                             <MessageCircle size={16} className="text-brand-pink" />
                             <h3 className="text-sm font-bold">沟通：{report.dimensions.communication.title}</h3>
                         </div>
-                        <p className="text-xs leading-6 text-gray-600 mb-3 text-justify">
+                        <p className="text-sm leading-6 text-gray-600 mb-3 text-justify">
                             {report.dimensions.communication.content}
                         </p>
                         <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex gap-2">
                             <Zap size={14} className="text-gray-400 shrink-0 mt-0.5" />
-                            <p className="text-[10px] text-gray-500 leading-relaxed">
+                            <p className="text-xs text-gray-500 leading-relaxed">
                                 {report.dimensions.communication.caution}
                             </p>
                         </div>
@@ -290,7 +290,7 @@ const Result: React.FC = () => {
                             <Briefcase size={16} className="text-brand-pink" />
                             <h3 className="text-sm font-bold">工作：{report.dimensions.work.title}</h3>
                         </div>
-                        <p className="text-xs leading-6 text-gray-600 mb-3 text-justify">
+                        <p className="text-sm leading-6 text-gray-600 mb-3 text-justify">
                             {report.dimensions.work.content}
                         </p>
                         <div className="flex flex-wrap gap-1.5 mb-3">
@@ -300,7 +300,7 @@ const Result: React.FC = () => {
                         </div>
                         <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex gap-2">
                             <Target size={14} className="text-gray-400 shrink-0 mt-0.5" />
-                            <p className="text-[10px] text-gray-500 leading-relaxed">
+                            <p className="text-xs text-gray-500 leading-relaxed">
                                 {report.dimensions.work.caution}
                             </p>
                         </div>
@@ -312,12 +312,12 @@ const Result: React.FC = () => {
                             <Heart size={16} className="text-brand-pink" />
                             <h3 className="text-sm font-bold">恋爱：{report.dimensions.love.title}</h3>
                         </div>
-                        <p className="text-xs leading-6 text-gray-600 mb-3 text-justify">
+                        <p className="text-sm leading-6 text-gray-600 mb-3 text-justify">
                             {report.dimensions.love.content}
                         </p>
                         <div className="bg-gradient-to-r from-brand-highlight to-white p-3 rounded-lg border border-brand-pink/10 flex gap-2">
                             <Heart size={14} className="text-brand-pink shrink-0 mt-0.5" />
-                            <p className="text-[10px] text-brand-text leading-relaxed">
+                            <p className="text-xs text-brand-text leading-relaxed">
                                 <span className="font-bold">适合伴侣：</span>{report.dimensions.love.partner}
                             </p>
                         </div>
@@ -533,12 +533,12 @@ const Result: React.FC = () => {
                                     <div className="grid grid-cols-2 gap-4 mb-4">
                                         <div className="bg-white p-4 rounded-xl shadow-sm h-full flex flex-col relative overflow-hidden">
                                             <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">你眼中的自己</p>
-                                            <p className="text-xs text-gray-600 leading-relaxed flex-1">{report.deviation?.selfPerception}</p>
+                                            <p className="text-sm text-gray-600 leading-relaxed flex-1">{report.deviation?.selfPerception}</p>
                                         </div>
 
                                         <div className="bg-white p-4 rounded-xl border-2 border-dashed border-gray-200 h-full relative overflow-hidden flex flex-col">
                                             <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">别人眼中的你</p>
-                                            <p className="text-xs text-gray-600 leading-relaxed flex-1">{report.deviation?.othersPerception}</p>
+                                            <p className="text-sm text-gray-600 leading-relaxed flex-1">{report.deviation?.othersPerception}</p>
                                         </div>
                                     </div>
 
@@ -548,13 +548,13 @@ const Result: React.FC = () => {
                                             <p className="text-[10px] font-bold text-brand-secondary mb-1 flex items-center gap-1">
                                                 <CheckCircle2 size={10} /> 核心共性
                                             </p>
-                                            <p className="text-xs text-brand-text leading-relaxed">{report.deviation?.similarities}</p>
+                                            <p className="text-sm text-brand-text leading-relaxed">{report.deviation?.similarities}</p>
                                         </div>
                                         <div className="bg-white/60 p-3 rounded-lg border border-white">
                                             <p className="text-[10px] font-bold text-brand-pink mb-1 flex items-center gap-1">
                                                 <Scale size={10} /> 关键分歧
                                             </p>
-                                            <p className="text-xs text-brand-text leading-relaxed">{report.deviation?.differences}</p>
+                                            <p className="text-sm text-brand-text leading-relaxed">{report.deviation?.differences}</p>
                                         </div>
                                     </div>
                                 </section>
@@ -593,7 +593,7 @@ const Result: React.FC = () => {
                                                 </div>
 
                                                 {/* Description */}
-                                                <p className="text-[10px] text-gray-500 leading-snug bg-gray-50 p-2 rounded-lg">
+                                                <p className="text-xs text-gray-500 leading-snug bg-gray-50 p-2 rounded-lg">
                                                     {dim.desc}
                                                 </p>
                                             </div>

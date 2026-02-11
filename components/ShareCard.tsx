@@ -59,13 +59,13 @@ const ShareCard: React.FC<ShareCardProps> = ({ report }) => {
                         {/* 圆点不动 */}
                         <div className="w-1.5 h-1.5 bg-brand-pink rounded-full shrink-0" />
                         {/* ✅ 标题文字上移，和圆点对齐 */}
-                        <h3 className="text-[11px] font-bold text-gray-900 tracking-wide relative top-[-6px]">
+                        <h3 className="text-xs font-bold text-gray-900 tracking-wide relative top-[-6px]">
                             人格底色
                         </h3>
                     </div>
 
                     {/* 正文：统一样式，✅ 左对齐更像期望图 */}
-                    <p className="text-[11px] leading-relaxed text-gray-600 text-left font-sans">
+                    <p className="text-xs leading-relaxed text-gray-600 text-left font-sans">
                         {report.shareContent.baseColor}
                     </p>
                 </div>
@@ -74,7 +74,7 @@ const ShareCard: React.FC<ShareCardProps> = ({ report }) => {
                 <div className="bg-white p-5 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 relative overflow-hidden shrink-0">
                     <div className="flex items-center gap-2 mb-3">
                         <div className="w-1.5 h-1.5 bg-brand-orange rounded-full shrink-0" />
-                        <h3 className="text-[11px] font-bold text-gray-900 tracking-wide relative top-[-6px]">
+                        <h3 className="text-xs font-bold text-gray-900 tracking-wide relative top-[-6px]">
                             和我相处的注意事项
                         </h3>
                     </div>
@@ -83,10 +83,10 @@ const ShareCard: React.FC<ShareCardProps> = ({ report }) => {
                         {/* 期望图：默认 3 条 */}
                         {report.shareContent.interactionGuide.slice(0, 3).map((rule, i) => (
                             <div key={i} className="flex items-start gap-2.5">
-                                <span className="text-[10px] font-mono font-bold text-brand-secondary/50 mt-[3px] shrink-0">
+                                <span className="text-[11px] font-mono font-bold text-brand-secondary/50 mt-[3px] shrink-0">
                                     0{i + 1}
                                 </span>
-                                <p className="text-[11px] leading-relaxed text-gray-600 text-left font-sans">
+                                <p className="text-xs leading-relaxed text-gray-600 text-left font-sans">
                                     {rule}
                                 </p>
                             </div>
