@@ -55,7 +55,7 @@ const Home: React.FC = () => {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-brand-secondary text-sm mb-12 tracking-wide text-center">
+            <p className="text-brand-secondary text-xs mb-12 tracking-wide text-center">
                 基于荣格八维模型构建人格解析系统<br />
                 通过双重视角校准，还原更真实的你
             </p>
