@@ -369,7 +369,7 @@ export async function getReport(mbtiType: string): Promise<ReportContent | null>
                 // 3. 全维校准数据（保留数值，覆盖文案描述）
                 dimensionAnalysis: hasPeer
                     ? (() => {
-                        const freshAnalysis = calculateDimensionAnalysis(mbtiTypeFromDb, peerMBTI, content.self_scores);
+                        const freshAnalysis = calculateDimensionAnalysis(content.self_scores, content.peer_scores);
                         const dbAnalysis = dbDeviation?.dimensionAnalysis || [];
                         // 用数据库的数值 + 最新的 desc
                         return freshAnalysis.map((fresh: any, i: number) => ({
@@ -382,7 +382,7 @@ export async function getReport(mbtiType: string): Promise<ReportContent | null>
 
                 // 4. 底部大黑卡（有 peerMBTI 时用最新函数重新生成）
                 conclusion: hasPeer
-                    ? getCalibrationConclusion(mbtiTypeFromDb, peerMBTI, calculateDimensionAnalysis(mbtiTypeFromDb, peerMBTI, content.self_scores))
+                    ? getCalibrationConclusion(mbtiTypeFromDb, peerMBTI, calculateDimensionAnalysis(content.self_scores, content.peer_scores))
                     : (dbDeviation?.conclusion || {
                         archetype: scripts?.temperature?.title || '未定型',
                         desc: scripts?.temperature?.full_desc || '...',
@@ -1135,7 +1135,7 @@ export async function getReportById(id: string): Promise<ReportContent | null> {
                 differences: hasPeer ? getDifferences(mbtiTypeFromDb, peerMBTI) : (dbDeviation?.differences || scripts?.temperature?.short_desc || ''),
                 dimensionAnalysis: hasPeer
                     ? (() => {
-                        const freshAnalysis = calculateDimensionAnalysis(mbtiTypeFromDb, peerMBTI, content.self_scores);
+                        const freshAnalysis = calculateDimensionAnalysis(content.self_scores, content.peer_scores);
                         const dbAnalysis = dbDeviation?.dimensionAnalysis || [];
                         return freshAnalysis.map((fresh: any, i: number) => ({
                             ...fresh,
@@ -1146,7 +1146,7 @@ export async function getReportById(id: string): Promise<ReportContent | null> {
                     : (dbDeviation?.dimensionAnalysis || []),
                 conclusion: hasPeer
                     ? {
-                        ...getCalibrationConclusion(mbtiTypeFromDb, peerMBTI, calculateDimensionAnalysis(mbtiTypeFromDb, peerMBTI, content.self_scores)),
+                        ...getCalibrationConclusion(mbtiTypeFromDb, peerMBTI, calculateDimensionAnalysis(content.self_scores, content.peer_scores)),
                     }
                     : (dbDeviation?.conclusion || {
                         archetype: scripts?.temperature?.title || '未定型',
@@ -1164,58 +1164,71 @@ export async function getReportById(id: string): Promise<ReportContent | null> {
 }
 
 /**
- * 提交他测评估
- * 1. 算分得出他评 MBTI
- * 2. 读取原报告数据
- * 3. 融合 peer_view 数据
+ * 提交他测评估（八维认知功能版）
+ * 1. 解析八维得分 + 功能栈匹配定型
+ * 2. 读取原报告
+ * 3. 融合 peer_view + 8轴雷达 + 4轴校准
  * 4. 写回数据库
  */
 export async function submitPeerAssessment(reportId: string, answers: string[]): Promise<boolean> {
     try {
-        // 1. 算出他评 MBTI
-        const scores: Record<string, number> = { E: 0, I: 0, S: 0, N: 0, T: 0, F: 0, J: 0, P: 0 };
+        // ========== 1. 八维认知功能计分 ==========
+        const scores: Record<string, number> = {
+            Se: 0, Si: 0, Ne: 0, Ni: 0, Te: 0, Ti: 0, Fe: 0, Fi: 0
+        };
         answers.forEach((val) => {
-            if (scores[val] !== undefined) {
-                scores[val]++;
-            }
+            const parts = val.split(',');
+            parts.forEach(part => {
+                const trimmed = part.trim();
+                if (trimmed.includes(':')) {
+                    const [func, w] = trimmed.split(':');
+                    if (scores[func] !== undefined) {
+                        scores[func] += parseFloat(w);
+                    }
+                }
+            });
         });
 
-        const dim1 = scores.E >= scores.I ? 'E' : 'I';
-        const dim2 = scores.S >= scores.N ? 'S' : 'N';
-        const dim3 = scores.T >= scores.F ? 'T' : 'F';
-        const dim4 = scores.J >= scores.P ? 'J' : 'P';
-        const peerMBTI = `${dim1}${dim2}${dim3}${dim4}`;
-
-        // ✅ 他评雷达图数据（固定值查表）
-        const radarLookup: Record<string, number[]> = {
-            'ENFP': [86, 88, 88, 52, 50, 84],
-            'ENTP': [88, 50, 86, 82, 52, 86],
-            'ESFP': [90, 84, 52, 50, 48, 88],
-            'ESTP': [88, 48, 50, 84, 50, 90],
-            'INFJ': [50, 88, 90, 54, 86, 52],
-            'INFP': [52, 90, 88, 50, 52, 48],
-            'ISFP': [54, 86, 52, 48, 50, 50],
-            'ISTP': [52, 48, 50, 88, 52, 54],
-            'ENFJ': [88, 88, 84, 54, 84, 86],
-            'ENTJ': [86, 50, 82, 90, 88, 90],
-            'ESFJ': [90, 86, 54, 52, 86, 84],
-            'ESTJ': [88, 48, 52, 88, 90, 90],
-            'INTJ': [50, 50, 90, 88, 88, 54],
-            'INTP': [52, 48, 88, 86, 52, 50],
-            'ISFJ': [54, 88, 52, 50, 90, 52],
-            'ISTJ': [52, 48, 50, 90, 90, 54],
+        // ========== 功能栈加权匹配定型（同自测逻辑） ==========
+        const FUNCTION_STACKS: Record<string, string[]> = {
+            'INTJ': ['Ni', 'Te', 'Fi', 'Se'], 'INFJ': ['Ni', 'Fe', 'Ti', 'Se'],
+            'ENTJ': ['Te', 'Ni', 'Se', 'Fi'], 'ENFJ': ['Fe', 'Ni', 'Se', 'Ti'],
+            'INTP': ['Ti', 'Ne', 'Si', 'Fe'], 'INFP': ['Fi', 'Ne', 'Si', 'Te'],
+            'ENTP': ['Ne', 'Ti', 'Fe', 'Si'], 'ENFP': ['Ne', 'Fi', 'Te', 'Si'],
+            'ISTJ': ['Si', 'Te', 'Fi', 'Ne'], 'ISFJ': ['Si', 'Fe', 'Ti', 'Ne'],
+            'ESTJ': ['Te', 'Si', 'Ne', 'Fi'], 'ESFJ': ['Fe', 'Si', 'Ne', 'Ti'],
+            'ISTP': ['Ti', 'Se', 'Ni', 'Fe'], 'ISFP': ['Fi', 'Se', 'Ni', 'Te'],
+            'ESTP': ['Se', 'Ti', 'Fe', 'Ni'], 'ESFP': ['Se', 'Fi', 'Te', 'Ni'],
         };
-        const peerRadarValues = radarLookup[peerMBTI] || [50, 50, 50, 50, 50, 50];
+        const STACK_WEIGHTS = [4, 3, 2, 1];
+
+        let peerMBTI = 'ISTJ';
+        let bestScore = -Infinity;
+        for (const [type, stack] of Object.entries(FUNCTION_STACKS)) {
+            let typeScore = 0;
+            stack.forEach((func, i) => {
+                typeScore += (scores[func] || 0) * STACK_WEIGHTS[i];
+            });
+            if (typeScore > bestScore) {
+                bestScore = typeScore;
+                peerMBTI = type;
+            }
+        }
+
+        // ========== 他评8轴雷达图（真实得分，归一化） ==========
+        const maxPeerScore = Math.max(...Object.values(scores), 0.1);
         const peerRadarData = [
-            { axis: '连接力', value: peerRadarValues[0] },
-            { axis: '共振力', value: peerRadarValues[1] },
-            { axis: '想象力', value: peerRadarValues[2] },
-            { axis: '判断力', value: peerRadarValues[3] },
-            { axis: '稳定力', value: peerRadarValues[4] },
-            { axis: '行动力', value: peerRadarValues[5] },
+            { axis: 'Se 体验力', value: Math.round((scores.Se / maxPeerScore) * 90) },
+            { axis: 'Ne 脑洞力', value: Math.round((scores.Ne / maxPeerScore) * 90) },
+            { axis: 'Te 执行力', value: Math.round((scores.Te / maxPeerScore) * 90) },
+            { axis: 'Fe 共情力', value: Math.round((scores.Fe / maxPeerScore) * 90) },
+            { axis: 'Si 经验力', value: Math.round((scores.Si / maxPeerScore) * 90) },
+            { axis: 'Ni 洞察力', value: Math.round((scores.Ni / maxPeerScore) * 90) },
+            { axis: 'Ti 分析力', value: Math.round((scores.Ti / maxPeerScore) * 90) },
+            { axis: 'Fi 信念力', value: Math.round((scores.Fi / maxPeerScore) * 90) },
         ];
 
-        // 2. 获取原有报告
+        // ========== 2. 获取原有报告 ==========
         const { data: currentReport, error: fetchError } = await supabase
             .from('personality_reports')
             .select('content')
@@ -1231,15 +1244,15 @@ export async function submitPeerAssessment(reportId: string, answers: string[]):
             throw new Error("报告不存在或数据为空");
         }
 
-        // 3. 融合数据 (解锁校准报告)
+        // ========== 3. 融合数据 ==========
         const oldContent = currentReport.content;
         const selfMBTI = oldContent.mbti_type || 'INTJ';
-        const selfScores = oldContent.self_scores; // createReport 保存的自评各维度得分
+        const selfScores = oldContent.self_scores;
 
-        // 根据自评和他评 真实 scores 计算四维度偏差值
-        const dimensionAnalysis = calculateDimensionAnalysis(selfMBTI, peerMBTI, selfScores, scores);
+        // 4轴校准对比（Te/Fi, Ti/Fe, Se/Ni, Si/Ne）
+        const dimensionAnalysis = calculateDimensionAnalysis(selfScores, scores);
 
-        // peerView 查表（与 getReport/getReportById 保持一致）
+        // peerView 查表
         const peerViewLookup: Record<string, string> = {
             'ENFP': '在别人眼中，你展现出 ENFP 的热情外向特质，总是气氛担当、话题发动机，但也容易被误解为太情绪化或不够稳重。',
             'ENTP': '在别人看来，你带着 ENTP 的跳跃与犀利思维，总是点子不断、敢质疑权威，但有时会被觉得太爱辩论。',
@@ -1262,6 +1275,7 @@ export async function submitPeerAssessment(reportId: string, answers: string[]):
 
         const newContent = {
             ...oldContent,
+            peer_scores: scores, // 保存他评原始八维分数
             perception: {
                 ...oldContent.perception,
                 peer_view: {
@@ -1279,11 +1293,7 @@ export async function submitPeerAssessment(reportId: string, answers: string[]):
                 selfPerception: oldContent.perception?.self_view || `自评 ${selfMBTI} 类型`,
                 similarities: getSimilarities(selfMBTI, peerMBTI),
                 differences: getDifferences(selfMBTI, peerMBTI),
-
-                // ✅ 四维度对比数据 (用于全维校准图表)
                 dimensionAnalysis: dimensionAnalysis,
-
-                // ✅ 校准结论 (用于底部大黑卡)
                 conclusion: {
                     ...getCalibrationConclusion(selfMBTI, peerMBTI, dimensionAnalysis),
                 }
@@ -1310,35 +1320,24 @@ export async function submitPeerAssessment(reportId: string, answers: string[]):
 }
 
 /**
- * 计算四维度对比分析数据
+ * 计算四组认知功能轴对比（Te/Fi, Ti/Fe, Se/Ni, Si/Ne）
+ * selfScores / peerScores: { Se, Si, Ne, Ni, Te, Ti, Fe, Fi }
+ * 每轴返回 0-100 的值，0=纯左，100=纯右
  */
 function calculateDimensionAnalysis(
-    selfMBTI: string,
-    peerMBTI: string,
     selfScores?: Record<string, number>,
     peerScores?: Record<string, number>
 ) {
-    // 用真实答题比例计算维度值 (0=偏左, 100=偏右)
-    // EI 维度：0=纯E, 100=纯I；SN 维度：0=纯S, 100=纯N；以此类推
-    const calcPercent = (scores: Record<string, number> | undefined, leftKey: string, rightKey: string, mbtiChar: string) => {
-        if (scores) {
-            const total = (scores[leftKey] || 0) + (scores[rightKey] || 0);
-            if (total > 0) {
-                // 右侧字母的占比 * 100
-                return Math.round(((scores[rightKey] || 0) / total) * 100);
-            }
-        }
-        // 没有真实分数时用 MBTI 字母的固定映射（无随机）
-        const fallback: Record<string, number> = {
-            'E': 30, 'I': 70,
-            'S': 30, 'N': 70,
-            'T': 30, 'F': 70,
-            'J': 30, 'P': 70
-        };
-        return fallback[mbtiChar] ?? 50;
+    // 将一对认知功能得分转换为 0-100 标尺 (0=纯左, 100=纯右)
+    const calcAxis = (scores: Record<string, number> | undefined, leftKey: string, rightKey: string): number => {
+        if (!scores) return 50;
+        const left = scores[leftKey] || 0;
+        const right = scores[rightKey] || 0;
+        const total = left + right;
+        if (total === 0) return 50;
+        return Math.round((right / total) * 100);
     };
 
-    // 根据 selfValue 与 peerValue 差值判断匹配等级
     type MatchLevel = 'high' | 'medium' | 'mixed' | 'low';
     const getMatchLevel = (sv: number, pv: number): MatchLevel => {
         const diff = Math.abs(sv - pv);
@@ -1348,88 +1347,88 @@ function calculateDimensionAnalysis(
         return 'low';
     };
 
-    // 四级描述
-    const getEIDesc = (level: MatchLevel) => {
+    // 四组轴的描述
+    const getTeiFiDesc = (level: MatchLevel) => {
         switch (level) {
-            case 'high': return '你对外展现的状态，和你真实的能量节奏几乎一致。别人看到的你，基本就是你真实的样子——不需要刻意扮演，也很少硬撑。';
-            case 'medium': return '整体来说，别人对你的社交状态判断是准的，但他们可能低估了你偶尔的疲惫感。你看起来游刃有余，其实有时也需要独处回血。';
-            case 'mixed': return '你在不同场合切换得很自然：有时外向得像个社交发动机，有时却突然消失。别人看到的是你的"在线状态"，但真正的充电方式只有你自己懂。';
-            case 'low': return '你真实的能量需求，和外界理解存在明显落差。你可能习惯性"演得很精神"，久而久之，连别人都忘了你其实很容易累。';
+            case 'high': return '你在效率与价值之间的权衡方式非常稳定，别人看到的你在决策时的选择标准，和你内心真正在意的基本吻合。';
+            case 'medium': return '大部分情况下，别人理解你做决策的逻辑。但偶尔你出于内心原则做的选择，可能被误解为不够务实。';
+            case 'mixed': return '你做决定时内心的标准和外部表现差异明显。你可能看起来很理性高效，但实际上内心有一套自己的价值判断在运作。';
+            case 'low': return '你真实的决策驱动力和外界感知完全不同。你可能对外展现出务实高效，但内心是由价值信念驱动的——或者反过来。';
         }
     };
-    const getSNDesc = (level: MatchLevel) => {
+    const getTiFieDesc = (level: MatchLevel) => {
         switch (level) {
-            case 'high': return '你思考问题的方式非常稳定，不管是关注细节还是全局，别人看到的逻辑路径，和你内心运作基本一致。';
-            case 'medium': return '你的思考方式大体清晰，但在表达时会做一些调整。有时你明明想得很深，却只说一半。';
-            case 'mixed': return '你内心的思考路线很复杂，但对外表达时经常"简化输出"。别人以为你懂得很具体，其实你脑子里跑的是另一套系统。';
-            case 'low': return '你真实的思考深度，很容易被低估。你可能懒得解释太多，久了就被误以为"没想那么多"。';
+            case 'high': return '你在逻辑与人情之间的处理方式，别人看得很准。你对外展现的社交态度，和你内心的真实偏好基本一致。';
+            case 'medium': return '别人大体理解你的社交偏好，但可能低估了你偶尔的不耐烦感或者高估了你的社交热情。';
+            case 'mixed': return '你在社交中的理性面和感性面切换较大。有些人觉得你很好相处，另一些人觉得你难以接近——两种感受可能都是对的。';
+            case 'low': return '你的内在逻辑倾向和对外社交形象之间存在显著落差。你可能表面上很随和温暖，但骨子里更看重逻辑和效率——或反过来。';
         }
     };
-    const getTFDesc = (level: MatchLevel) => {
+    const getSeNiDesc = (level: MatchLevel) => {
         switch (level) {
-            case 'high': return '你做决定时的价值取向非常稳定，别人基本能感知到你真正看重什么，很少误判你的立场。';
-            case 'medium': return '你的判断逻辑大体清楚，但在关系里会适当软化。理性和情感之间，你经常在做微调。';
-            case 'mixed': return '你在不同关系中，呈现出不同的决策侧面。有时很冷静，有时又特别在乎感受，连别人都摸不透你真正的底线。';
-            case 'low': return '你的真实判断标准，经常被误读。你习惯先照顾别人感受，结果反而让人误会你没有立场。';
+            case 'high': return '你对当下体验和未来直觉的偏好非常一致——你活在哪里，别人就能感觉到你在哪里。不需要解释，不容易误读。';
+            case 'medium': return '大体上别人能准确感知你关注的是眼前还是未来，但偶尔你的远见会被误以为走神，或你的行动力被低估为冲动。';
+            case 'mixed': return '你在感官体验和直觉洞察之间切换幅度较大。别人有时觉得你很现实，有时又觉得你活在自己的世界里。';
+            case 'low': return '你对世界的感知方式和别人看到的你完全不同。你可能内心充满直觉预判，但外表看起来很注重当下——或者反过来。';
         }
     };
-    const getJPDesc = (level: MatchLevel) => {
+    const getSiNeDesc = (level: MatchLevel) => {
         switch (level) {
-            case 'high': return '你的生活节奏与对外呈现高度一致。你是有序就是有序，松弛就是松弛，很少给人错觉。';
-            case 'medium': return '整体节奏稳定，但你偶尔会在私下"摆烂回血"。别人看到的是规律版你，看不到混乱版你。';
-            case 'mixed': return '你的生活状态存在明显双轨：对外看起来很稳，私下却经常临时调整、随性应变。';
-            case 'low': return '你的真实节奏感被严重误判。你可能早已很疲惫，但仍维持着"我还OK"的外壳。';
+            case 'high': return '你在经验导向和探索导向之间的偏好非常稳定。是求稳还是求变，你的内外表现高度统一。';
+            case 'medium': return '大部分时候别人能感知到你是保守派还是探索派，但你偶尔的跳跃想法或保守选择可能让人小小意外。';
+            case 'mixed': return '你在熟悉路线和全新探索之间经常摇摆。别人很难预测你下次会选旧路线还是闯新路。';
+            case 'low': return '你的内在探索欲和外在稳定感之间存在很大落差。你可能看起来很保守求稳，脑子里却在跑各种脑洞——或者反过来。';
         }
     };
 
-    // 先算出各维度的值
-    const eiSelf = calcPercent(selfScores, 'E', 'I', selfMBTI[0]);
-    const eiPeer = calcPercent(peerScores, 'E', 'I', peerMBTI[0]);
-    const snSelf = calcPercent(selfScores, 'S', 'N', selfMBTI[1]);
-    const snPeer = calcPercent(peerScores, 'S', 'N', peerMBTI[1]);
-    const tfSelf = calcPercent(selfScores, 'T', 'F', selfMBTI[2]);
-    const tfPeer = calcPercent(peerScores, 'T', 'F', peerMBTI[2]);
-    const jpSelf = calcPercent(selfScores, 'J', 'P', selfMBTI[3]);
-    const jpPeer = calcPercent(peerScores, 'J', 'P', peerMBTI[3]);
+    // 计算四组轴
+    const tefiSelf = calcAxis(selfScores, 'Te', 'Fi');
+    const tefiPeer = calcAxis(peerScores, 'Te', 'Fi');
+    const tifeSelf = calcAxis(selfScores, 'Ti', 'Fe');
+    const tifePeer = calcAxis(peerScores, 'Ti', 'Fe');
+    const seniSelf = calcAxis(selfScores, 'Se', 'Ni');
+    const seniPeer = calcAxis(peerScores, 'Se', 'Ni');
+    const sineSelf = calcAxis(selfScores, 'Si', 'Ne');
+    const sinePeer = calcAxis(peerScores, 'Si', 'Ne');
 
     return [
         {
-            label: '能量',
-            left: 'E (外向)',
-            right: 'I (内向)',
-            selfValue: eiSelf,
-            peerValue: eiPeer,
-            desc: getEIDesc(getMatchLevel(eiSelf, eiPeer)),
-        },
-        {
-            label: '信息',
-            left: 'S (实感)',
-            right: 'N (直觉)',
-            selfValue: snSelf,
-            peerValue: snPeer,
-            desc: getSNDesc(getMatchLevel(snSelf, snPeer)),
-        },
-        {
             label: '决策',
-            left: 'T (思考)',
-            right: 'F (情感)',
-            selfValue: tfSelf,
-            peerValue: tfPeer,
-            desc: getTFDesc(getMatchLevel(tfSelf, tfPeer)),
+            left: 'Te (执行)',
+            right: 'Fi (信念)',
+            selfValue: tefiSelf,
+            peerValue: tefiPeer,
+            desc: getTeiFiDesc(getMatchLevel(tefiSelf, tefiPeer)),
         },
         {
-            label: '生活',
-            left: 'J (判断)',
-            right: 'P (感知)',
-            selfValue: jpSelf,
-            peerValue: jpPeer,
-            desc: getJPDesc(getMatchLevel(jpSelf, jpPeer)),
+            label: '社交',
+            left: 'Ti (逻辑)',
+            right: 'Fe (共情)',
+            selfValue: tifeSelf,
+            peerValue: tifePeer,
+            desc: getTiFieDesc(getMatchLevel(tifeSelf, tifePeer)),
+        },
+        {
+            label: '感知',
+            left: 'Se (体验)',
+            right: 'Ni (洞察)',
+            selfValue: seniSelf,
+            peerValue: seniPeer,
+            desc: getSeNiDesc(getMatchLevel(seniSelf, seniPeer)),
+        },
+        {
+            label: '视野',
+            left: 'Si (经验)',
+            right: 'Ne (脑洞)',
+            selfValue: sineSelf,
+            peerValue: sinePeer,
+            desc: getSiNeDesc(getMatchLevel(sineSelf, sinePeer)),
         },
     ];
 }
 
 /**
- * 分析自评和他评的共性（三种状态）
+ * 分析自评和他评的共性
  */
 function getSimilarities(selfMBTI: string, peerMBTI: string): string {
     let matchCount = 0;
@@ -1451,7 +1450,7 @@ function getSimilarities(selfMBTI: string, peerMBTI: string): string {
 }
 
 /**
- * 分析自评和他评的分歧（中性表述）
+ * 分析自评和他评的分歧
  */
 function getDifferences(selfMBTI: string, peerMBTI: string): string {
     const diffDimensions: string[] = [];
@@ -1473,147 +1472,76 @@ function getDifferences(selfMBTI: string, peerMBTI: string): string {
 }
 
 /**
- * 生成校准原型标题（三种状态）
- */
-/**
- * 12 种校准结论人格命中逻辑
- * 优先级：C → D → B → A（保证只落一个结果）
- * dimensionAnalysis 可选，用于 A2 判定（极端分数检测）
+ * 校准结论（基于四轴认知功能差值）
  */
 function getCalibrationConclusion(
     selfMBTI: string,
     peerMBTI: string,
     dimensionAnalysis?: Array<{ selfValue: number; peerValue: number }>
 ): { archetype: string; desc: string; suggestion: string } {
-    // 各维度是否一致
-    const eiSame = selfMBTI[0] === peerMBTI[0];
-    const snSame = selfMBTI[1] === peerMBTI[1];
-    const tfSame = selfMBTI[2] === peerMBTI[2];
-    const jpSame = selfMBTI[3] === peerMBTI[3];
+    // 计算四轴的平均差值
+    const diffs = (dimensionAnalysis || []).map(d => Math.abs(d.selfValue - d.peerValue));
+    const avgDiff = diffs.length > 0 ? diffs.reduce((a, b) => a + b, 0) / diffs.length : 0;
+    const maxDiff = diffs.length > 0 ? Math.max(...diffs) : 0;
 
-    const diffDims = [!eiSame, !snSame, !tfSame, !jpSame];
-    const diffCount = diffDims.filter(Boolean).length;
+    // MBTI 字母差异数
+    let letterDiffCount = 0;
+    for (let i = 0; i < 4; i++) {
+        if (selfMBTI[i] !== peerMBTI[i]) letterDiffCount++;
+    }
 
-    // T/F 方向性判断
-    const selfIsT = selfMBTI[2] === 'T';
-    const peerIsT = peerMBTI[2] === 'T';
-    const tfReversed = !tfSame; // T/F 不同即反向
-
-    // 是否有极端分数（用于 A2）
-    const hasExtreme = dimensionAnalysis?.some(
-        d => d.selfValue <= 20 || d.selfValue >= 80 || d.peerValue <= 20 || d.peerValue >= 80
-    ) ?? false;
-
-    // 是否有完全反向的维度对（用于 D4）
-    const hasFullReverse = (!eiSame && !jpSame) || (!eiSame && !tfSame) || (!snSame && !tfSame) || (!snSame && !jpSame) || (!eiSame && !snSame) || (!tfSame && !jpSame);
-
-    type ConclusionId = 'A1' | 'A2' | 'B1' | 'B2' | 'B3' | 'B4' | 'C1' | 'C2' | 'D1' | 'D2' | 'D3' | 'D4';
-
+    type ConclusionId = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
     let id: ConclusionId;
 
-    // === 优先级 D：3-4 维度不同（最高优先级） ===
-    if (diffCount === 4) {
-        id = 'D2'; // 四个维度全部不同 → 人格分区运行体
-    } else if (diffCount === 3 && !eiSame) {
-        id = 'D3'; // 三个不同且包含 E/I → 双轨人生模式号
-    } else if (diffCount >= 2 && hasFullReverse) {
-        id = 'D4'; // 至少两个不同且有一组完全反向 → 多面自我管理型
-    } else if (diffCount === 3) {
-        id = 'D1'; // 三个维度不同 → 多身份并行玩家
-    }
-    // === 优先级 C：T/F 方向相反（仅差异维度 ≤2 时触发） ===
-    else if (tfReversed && selfIsT && !peerIsT && diffCount <= 2) {
-        id = 'C1'; // 自测T，他测F → 情绪缓冲担当派
-    } else if (tfReversed && !selfIsT && peerIsT && diffCount <= 2) {
-        id = 'C2'; // 自测F，他测T → 理性防御派选手
-    }
-    // === 优先级 B：仅 1 维度不同 ===
-    else if (diffCount === 1 && !eiSame) {
-        id = 'B1'; // 只有 E/I 不同 → 场景切换高手派
-    } else if (diffCount === 1 && !snSame) {
-        id = 'B2'; // 只有 S/N 不同 → 气氛调节担当王
-    } else if (diffCount === 1 && !tfSame) {
-        id = 'B3'; // 只有 T/F 不同 → 判断切换型选手
-    } else if (diffCount === 1 && !jpSame) {
-        id = 'B4'; // 只有 J/P 不同 → 节奏调节模式体
-    }
-    // === 优先级 A：全部一致 ===
-    else if (diffCount === 0 && hasExtreme) {
-        id = 'A2'; // 四维一致但有极端分数 → 内核自洽派选手
-    } else if (diffCount === 0) {
-        id = 'A1'; // 四维完全一致 → 稳场核心担当型
-    }
-    // === Fallback: diffCount === 2 但不满足 D4 ===
-    else {
-        id = 'D4'; // 两维度不同的通用兜底 → 多面自我管理型
+    if (avgDiff <= 10 && letterDiffCount === 0) {
+        id = maxDiff >= 20 ? 'A2' : 'A1';
+    } else if (avgDiff <= 20 || letterDiffCount <= 1) {
+        id = 'B1';
+    } else if (avgDiff <= 35 || letterDiffCount <= 2) {
+        id = 'B2';
+    } else if (letterDiffCount <= 3) {
+        id = 'C1';
+    } else {
+        id = 'C2';
     }
 
-    // 结论内容查表
     const conclusions: Record<ConclusionId, { archetype: string; desc: string; suggestion: string }> = {
         'A1': {
             archetype: '稳场核心担当型',
-            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在四个维度上保持高度一致，说明你在不同关系与情境中呈现出的性格结构非常稳定。你对自己的认知与他人对你的感受之间差距较小，做事风格、判断逻辑和情绪表达基本处于同一轨道。这种一致性让你更容易建立长期信任关系，也更容易成为团队或家庭中的"稳定点"。但同时，高度稳定也可能降低你对新可能性的敏感度。`,
+            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在四组认知功能轴上均保持高度一致，说明你在不同关系与情境中呈现出的性格结构非常稳定。你对自己的认知与他人对你的感受之间差距极小，做事风格、判断逻辑和情绪表达基本处于同一轨道。这种一致性让你更容易建立长期信任关系，也更容易成为团队或家庭中的"稳定点"。`,
             suggestion: '在保持核心优势的同时，适度尝试不同角色或新环境，为自己的性格系统增加弹性空间，避免长期固化。',
         },
         'A2': {
             archetype: '内核自洽派选手',
-            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在四个维度上完全一致，且部分维度呈现出较为明显的偏向特征，说明你的性格结构已经形成较为成熟而稳定的运行模式。你对价值判断、信息处理与行动节奏有清晰而固定的内在标准，并且在不同场合中能够保持高度一致。这种自洽性让你具备强烈的个人风格，但也可能让外界较难影响你的既有判断。`,
+            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）整体一致，但部分认知功能轴呈现出较为明显的偏向特征，说明你的性格结构已经形成较为成熟而稳定的运行模式。你对价值判断、信息处理与行动节奏有清晰而固定的内在标准，并且在不同场合中能够保持高度一致。`,
             suggestion: '定期检视自己的判断框架，在重要决策中主动引入不同视角作为参考，防止长期陷入单一逻辑循环。',
         },
         'B1': {
             archetype: '场景切换高手派',
-            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在 E/I 维度上存在差异，说明你在社交能量的使用方式上，会根据环境自动调整。在熟悉或安全的场合中，你可能更内敛、独处导向；而在工作、社交或责任场景中，则会主动调高外向度，承担更多互动角色。这种切换能力让你适应性很强，但也意味着你需要持续管理自己的能量消耗，容易在长期高负荷下产生隐性疲惫。`,
-            suggestion: '留意哪些社交场合让你明显透支，适当减少"必须在线"的时间，为自己保留稳定的恢复空间。',
+            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在个别认知功能轴上存在差异，说明你在特定场景中会自动调整表达方式。你在安全环境中可能更真实地展现某些偏好，而在社交或职场环境中则会切换到另一种模式。这种切换能力让你适应性很强，但也需要管理切换带来的精力消耗。`,
+            suggestion: '留意哪些场景让你明显透支，适当减少不必要的"角色切换"，为自己保留稳定的恢复空间。',
         },
         'B2': {
-            archetype: '气氛调节担当王',
-            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在 S/N 维度上出现差异，说明你在信息处理方式上具有明显的双重视角。在内心层面，你可能更关注整体趋势、可能性或长期方向；而在对外表达时，别人更容易感受到你对细节、现实条件或执行层面的重视。这种切换让你在沟通中更具弹性，但也可能让你在表达真实思考时有所保留。`,
-            suggestion: '在关键讨论中，尝试明确区分"我真实的想法"和"我为了好沟通做的简化版本"，避免长期压缩真实判断。',
-        },
-        'B3': {
             archetype: '判断切换型选手',
-            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在 T/F 维度上存在轻度差异，说明你在做判断时，会根据关系和情境灵活调整理性与情感的比例。有时你更强调逻辑与效率，有时则更重视感受与关系平衡。这种调节能力让你在人际互动中较为圆融，但也可能让你在部分情境中感到"到底该听谁的"变得模糊。`,
+            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在多组认知功能轴上出现中度差异，说明你在做判断和处理信息时，会根据关系和情境灵活调整策略。有时你更强调逻辑与效率，有时则更重视感受与体验。这种调节能力让你在人际互动中较为圆融，但也可能让你对"真正的自己"产生模糊感。`,
             suggestion: '在重要决策前，为自己设定一个固定判断标准，先独立完成判断，再进入协商阶段，减少摇摆感。',
         },
-        'B4': {
-            archetype: '节奏调节模式体',
-            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在 J/P 维度上存在差异，说明你在生活与工作节奏的管理方式上具有明显弹性。在内心层面，你可能偏向计划、有序或提前准备；而在实际表现中，别人更容易看到你随机应变、临场调整的一面。这种节奏调节能力让你应对变化更加从容，但也可能削弱长期规划的稳定性。`,
-            suggestion: '为重要目标设置"最低执行框架"，即使在灵活调整时，也确保核心计划不被频繁打断。',
-        },
         'C1': {
-            archetype: '情绪缓冲担当派',
-            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在 T/F 维度上呈现出明显反向：你内心更倾向于用理性标准做判断，但在实际互动中，别人更容易感受到你的体贴与照顾。这说明你在关系和合作场景中，往往会主动压低自己的逻辑优先级，把情绪稳定和关系安全放在前面。这种"缓冲型"行为让你成为可靠的支持者，但也可能让你的真实立场被长期弱化。`,
-            suggestion: '在重要决策前，先把自己的真实判断写下来，再进入讨论或协商过程，避免在压力环境下自动让步，逐步找回判断主权。',
+            archetype: '多身份并行玩家',
+            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在多组认知功能轴上出现明显差异，说明你在不同关系和环境中，会自动切换不同的身份模式来应对现实需求。在工作、家庭或亲密关系中，你往往启用不同的表达方式、判断逻辑和行动节奏。这种并行运行能力让你具备很强的适应力，但也意味着你需要持续消耗精力管理这些状态切换。`,
+            suggestion: '为自己预留一段无需扮演任何角色的固定时间，逐步减少不必要的切换，让不同状态慢慢回归统一。',
         },
         'C2': {
-            archetype: '理性防御派选手',
-            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在 T/F 维度上出现反向变化：你内心更关注感受与价值共鸣，但在外部环境中，别人更容易看到你理性、克制的一面。这通常意味着你在面对压力、竞争或不确定关系时，会主动切换到"理性防御模式"，用逻辑和规则保护自己的情绪边界。这种策略有助于短期稳定，却可能让亲近的人难以理解你的真实感受。`,
-            suggestion: '在安全关系中，尝试先表达感受，再进入理性分析流程，让重要的人更早接触你的真实动机，减少误解与心理距离。',
-        },
-        'D1': {
-            archetype: '多身份并行玩家',
-            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在三个维度上出现明显差异，说明你在不同关系和环境中，会自动切换不同的身份模式来应对现实需求。在工作、家庭或亲密关系中，你往往启用不同的表达方式、判断逻辑和行动节奏，以维持整体稳定。这种并行运行能力让你具备很强的适应力，但也意味着你需要持续消耗精力管理这些状态切换，久而久之，容易忽略自己真正偏好的生活方式。`,
-            suggestion: '为自己预留一段无需扮演任何角色的固定时间，比如独处或深度兴趣时间，逐步减少不必要的切换，让不同状态慢慢回归统一。',
-        },
-        'D2': {
             archetype: '人格分区运行体',
-            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在四个维度上全部呈现不同方向，说明你在不同情境中形成了较为明确的"分区运行模式"。在部分场合中，你展现出高度理性与秩序感，而在其他环境下，又可能表现出更感性或随性的状态。这种分区机制帮助你在复杂环境中保持运转效率，但长期来看，也可能削弱内在一致感，使你在独处时感到模糊或疲惫。`,
+            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在认知功能轴上全面呈现不同方向，说明你在不同情境中形成了较为明确的"分区运行模式"。在部分场合中，你展现出高度理性与秩序感，而在其他环境下，又可能表现出更感性或随性的状态。这种分区机制帮助你在复杂环境中保持运转效率，但长期来看，也可能削弱内在一致感。`,
             suggestion: '尝试记录自己在不同场景下的状态变化，找出重复出现的模式，有意识地减少过度分裂的角色配置，建立更稳定的核心节奏。',
-        },
-        'D3': {
-            archetype: '双轨人生模式号',
-            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在三个维度上存在差异，且包含 E/I 的明显变化，说明你在社交能量和行为策略上存在双轨运行特征。在某些场合，你表现得外向积极、反应迅速；而在另一部分时间里，则更倾向于内敛独处、降低外部互动。这种双轨结构让你在不同环境中保持弹性，但也可能导致精力分配失衡，出现阶段性疲惫或疏离感。`,
-            suggestion: '留意自己在哪些场景下消耗最多精力，适当压缩非必要社交，把能量更多投入到真正重要的关系与事务中。',
-        },
-        'D4': {
-            archetype: '多面自我管理型',
-            desc: `你的自测（${selfMBTI}）与他测（${peerMBTI}）在多个维度上呈现出明显的反向差异，说明你在不同环境中建立了较为强烈的自我管理机制。你往往会根据外部期待主动调整表达方式、决策逻辑与行为边界，使自己适配各种现实需求。这种高度自控的运作方式有助于短期稳定，但也可能压缩真实感受的表达空间，长期容易形成内在压力积累。`,
-            suggestion: '在可信任的关系中尝试降低自我管理强度，允许自己表达真实想法与情绪，为内在状态建立更安全的出口。',
         },
     };
 
     return conclusions[id];
 }
+
+
 
 /**
  * 验证邀请码（一码一测）
