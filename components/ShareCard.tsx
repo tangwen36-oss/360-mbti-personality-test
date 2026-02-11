@@ -65,7 +65,7 @@ const ShareCard: React.FC<ShareCardProps> = ({ report }) => {
                     </div>
 
                     {/* 正文：统一样式，✅ 左对齐更像期望图 */}
-                    <p className="text-xs leading-relaxed text-gray-600 text-left font-sans">
+                    <p className="text-xs font-serif leading-relaxed text-gray-600 text-left">
                         {report.shareContent.baseColor}
                     </p>
                 </div>
@@ -86,7 +86,7 @@ const ShareCard: React.FC<ShareCardProps> = ({ report }) => {
                                 <span className="text-[11px] font-mono font-bold text-brand-secondary/50 mt-[3px] shrink-0">
                                     0{i + 1}
                                 </span>
-                                <p className="text-xs leading-relaxed text-gray-600 text-left font-sans">
+                                <p className="text-xs font-serif leading-relaxed text-gray-600 text-left">
                                     {rule}
                                 </p>
                             </div>

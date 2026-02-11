@@ -226,7 +226,7 @@ const Result: React.FC = () => {
                             </p>
                             <ul className="space-y-3">
                                 {report.talent.strengths.map((s, i) => (
-                                    <li key={i} className="text-sm text-brand-text font-medium leading-normal bg-orange-50/50 p-2 rounded-lg border border-orange-100">
+                                    <li key={i} className="text-sm font-serif text-brand-text font-medium leading-normal bg-orange-50/50 p-2 rounded-lg border border-orange-100">
                                         {s}
                                     </li>
                                 ))}
@@ -238,7 +238,7 @@ const Result: React.FC = () => {
                             </p>
                             <ul className="space-y-3">
                                 {report.talent.weaknesses.map((w, i) => (
-                                    <li key={i} className="text-sm text-gray-500 font-medium leading-normal bg-gray-50 p-2 rounded-lg border border-gray-100">
+                                    <li key={i} className="text-sm font-serif text-gray-500 font-medium leading-normal bg-gray-50 p-2 rounded-lg border border-gray-100">
                                         {w}
                                     </li>
                                 ))}
@@ -256,12 +256,12 @@ const Result: React.FC = () => {
                             <Scale size={16} className="text-brand-pink" />
                             <h3 className="text-sm font-bold">决策：{report.dimensions.decision.title}</h3>
                         </div>
-                        <p className="text-sm leading-6 text-gray-600 mb-3 text-justify">
+                        <p className="text-sm font-serif leading-6 text-gray-600 mb-3 text-justify">
                             {report.dimensions.decision.content}
                         </p>
                         <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex gap-2">
                             <ShieldAlert size={14} className="text-gray-400 shrink-0 mt-0.5" />
-                            <p className="text-xs text-gray-500 leading-relaxed">
+                            <p className="text-xs font-serif text-gray-500 leading-relaxed">
                                 {report.dimensions.decision.limit}
                             </p>
                         </div>
@@ -273,12 +273,12 @@ const Result: React.FC = () => {
                             <MessageCircle size={16} className="text-brand-pink" />
                             <h3 className="text-sm font-bold">沟通：{report.dimensions.communication.title}</h3>
                         </div>
-                        <p className="text-sm leading-6 text-gray-600 mb-3 text-justify">
+                        <p className="text-sm font-serif leading-6 text-gray-600 mb-3 text-justify">
                             {report.dimensions.communication.content}
                         </p>
                         <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex gap-2">
                             <Zap size={14} className="text-gray-400 shrink-0 mt-0.5" />
-                            <p className="text-xs text-gray-500 leading-relaxed">
+                            <p className="text-xs font-serif text-gray-500 leading-relaxed">
                                 {report.dimensions.communication.caution}
                             </p>
                         </div>
@@ -290,17 +290,17 @@ const Result: React.FC = () => {
                             <Briefcase size={16} className="text-brand-pink" />
                             <h3 className="text-sm font-bold">工作：{report.dimensions.work.title}</h3>
                         </div>
-                        <p className="text-sm leading-6 text-gray-600 mb-3 text-justify">
+                        <p className="text-sm font-serif leading-6 text-gray-600 mb-3 text-justify">
                             {report.dimensions.work.content}
                         </p>
                         <div className="flex flex-wrap gap-1.5 mb-3">
                             {report.dimensions.work.careers.map(c => (
-                                <span key={c} className="text-[10px] px-2 py-0.5 bg-brand-highlight text-brand-pink rounded border border-brand-pink/20">{c}</span>
+                                <span key={c} className="text-xs px-2 py-0.5 bg-brand-highlight text-brand-pink rounded border border-brand-pink/20">{c}</span>
                             ))}
                         </div>
                         <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex gap-2">
                             <Target size={14} className="text-gray-400 shrink-0 mt-0.5" />
-                            <p className="text-xs text-gray-500 leading-relaxed">
+                            <p className="text-xs font-serif text-gray-500 leading-relaxed">
                                 {report.dimensions.work.caution}
                             </p>
                         </div>
@@ -312,12 +312,12 @@ const Result: React.FC = () => {
                             <Heart size={16} className="text-brand-pink" />
                             <h3 className="text-sm font-bold">恋爱：{report.dimensions.love.title}</h3>
                         </div>
-                        <p className="text-sm leading-6 text-gray-600 mb-3 text-justify">
+                        <p className="text-sm font-serif leading-6 text-gray-600 mb-3 text-justify">
                             {report.dimensions.love.content}
                         </p>
                         <div className="bg-gradient-to-r from-brand-highlight to-white p-3 rounded-lg border border-brand-pink/10 flex gap-2">
                             <Heart size={14} className="text-brand-pink shrink-0 mt-0.5" />
-                            <p className="text-xs text-brand-text leading-relaxed">
+                            <p className="text-xs font-serif text-brand-text leading-relaxed">
                                 <span className="font-bold">适合伴侣：</span>{report.dimensions.love.partner}
                             </p>
                         </div>
@@ -338,7 +338,7 @@ const Result: React.FC = () => {
                             </div>
                             <div>
                                 <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">互补成长</p>
-                                <p className="text-xs text-gray-600 leading-relaxed">{report.social.soulmate.desc}</p>
+                                <p className="text-sm font-serif text-gray-600 leading-relaxed">{report.social.soulmate.desc}</p>
                             </div>
                         </div>
 
@@ -349,7 +349,7 @@ const Result: React.FC = () => {
                             </div>
                             <div>
                                 <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">默契同频</p>
-                                <p className="text-xs text-gray-600 leading-relaxed">{report.social.partner.desc}</p>
+                                <p className="text-sm font-serif text-gray-600 leading-relaxed">{report.social.partner.desc}</p>
                             </div>
                         </div>
 
@@ -360,7 +360,7 @@ const Result: React.FC = () => {
                             </div>
                             <div>
                                 <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">摩擦内耗</p>
-                                <p className="text-xs text-gray-600 leading-relaxed">{report.social.conflict.desc}</p>
+                                <p className="text-sm font-serif text-gray-600 leading-relaxed">{report.social.conflict.desc}</p>
                             </div>
                         </div>
                     </div>
@@ -532,29 +532,29 @@ const Result: React.FC = () => {
                                     {/* Comparison Columns - Text Only */}
                                     <div className="grid grid-cols-2 gap-4 mb-4">
                                         <div className="bg-white p-4 rounded-xl shadow-sm h-full flex flex-col relative overflow-hidden">
-                                            <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">你眼中的自己</p>
-                                            <p className="text-sm text-gray-600 leading-relaxed flex-1">{report.deviation?.selfPerception}</p>
+                                            <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">你眼中的自己</p>
+                                            <p className="text-xs font-serif text-gray-600 leading-relaxed flex-1">{report.deviation?.selfPerception}</p>
                                         </div>
 
                                         <div className="bg-white p-4 rounded-xl border-2 border-dashed border-gray-200 h-full relative overflow-hidden flex flex-col">
-                                            <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">别人眼中的你</p>
-                                            <p className="text-sm text-gray-600 leading-relaxed flex-1">{report.deviation?.othersPerception}</p>
+                                            <p className="text-xs text-gray-400 uppercase tracking-wider mb-2">别人眼中的你</p>
+                                            <p className="text-xs font-serif text-gray-600 leading-relaxed flex-1">{report.deviation?.othersPerception}</p>
                                         </div>
                                     </div>
 
                                     {/* Similarities & Differences */}
                                     <div className="space-y-3">
                                         <div className="bg-white/60 p-3 rounded-lg border border-white">
-                                            <p className="text-[10px] font-bold text-brand-secondary mb-1 flex items-center gap-1">
+                                            <p className="text-xs font-bold text-brand-secondary mb-1 flex items-center gap-1">
                                                 <CheckCircle2 size={10} /> 核心共性
                                             </p>
-                                            <p className="text-sm text-brand-text leading-relaxed">{report.deviation?.similarities}</p>
+                                            <p className="text-xs font-serif text-brand-text leading-relaxed">{report.deviation?.similarities}</p>
                                         </div>
                                         <div className="bg-white/60 p-3 rounded-lg border border-white">
-                                            <p className="text-[10px] font-bold text-brand-pink mb-1 flex items-center gap-1">
+                                            <p className="text-xs font-bold text-brand-pink mb-1 flex items-center gap-1">
                                                 <Scale size={10} /> 关键分歧
                                             </p>
-                                            <p className="text-sm text-brand-text leading-relaxed">{report.deviation?.differences}</p>
+                                            <p className="text-xs font-serif text-brand-text leading-relaxed">{report.deviation?.differences}</p>
                                         </div>
                                     </div>
                                 </section>
@@ -593,7 +593,7 @@ const Result: React.FC = () => {
                                                 </div>
 
                                                 {/* Description */}
-                                                <p className="text-xs text-gray-500 leading-snug bg-gray-50 p-2 rounded-lg">
+                                                <p className="text-xs font-serif text-gray-500 leading-snug bg-gray-50 p-2 rounded-lg">
                                                     {dim.desc}
                                                 </p>
                                             </div>
@@ -655,44 +655,37 @@ const Result: React.FC = () => {
                 )}
             </div>
 
-            {/* Floating Action Buttons - Grid Layout - Flattened for Mobile */}
+            {/* Floating Action Buttons */}
             <div className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-md border-t border-gray-100 px-4 py-3 z-50">
-                <div className="grid grid-cols-2 gap-2">
-                    {/* 1. View Self Report */}
-                    <button
-                        onClick={() => setReportMode('self')}
-                        className={`py-2 text-[10px] font-bold rounded-lg transition-all border flex flex-row items-center justify-center gap-1.5 active:scale-[0.98] ${reportMode === 'self' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
-                    >
-                        <ScanFace size={12} className={reportMode === 'self' ? 'text-white' : 'text-gray-400'} />
-                        自测报告
-                    </button>
+                <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-2 gap-2">
+                        {/* 1. View Self Report */}
+                        <button
+                            onClick={() => setReportMode('self')}
+                            className={`py-2.5 text-xs font-bold rounded-lg transition-all border flex flex-row items-center justify-center gap-1.5 active:scale-[0.98] ${reportMode === 'self' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
+                        >
+                            <ScanFace size={14} className={reportMode === 'self' ? 'text-white' : 'text-gray-400'} />
+                            自测报告
+                        </button>
 
-                    {/* 2. View Calibration Report */}
-                    <button
-                        onClick={() => setReportMode('calibration')}
-                        className={`py-2 text-[10px] font-bold rounded-lg transition-all border flex flex-row items-center justify-center gap-1.5 active:scale-[0.98] ${reportMode === 'calibration' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
-                    >
-                        <GitCompare size={12} className={reportMode === 'calibration' ? 'text-white' : 'text-gray-400'} />
-                        校准报告
-                    </button>
+                        {/* 2. View Calibration Report */}
+                        <button
+                            onClick={() => setReportMode('calibration')}
+                            className={`py-2.5 text-xs font-bold rounded-lg transition-all border flex flex-row items-center justify-center gap-1.5 active:scale-[0.98] ${reportMode === 'calibration' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200 hover:bg-gray-50'}`}
+                        >
+                            <GitCompare size={14} className={reportMode === 'calibration' ? 'text-white' : 'text-gray-400'} />
+                            校准报告
+                        </button>
+                    </div>
 
-                    {/* 3. Share for Peer Review */}
-                    <button
-                        onClick={handleShareLink}
-                        className="py-2 text-[10px] font-bold rounded-lg transition-all border border-brand-text/20 bg-white text-brand-text hover:bg-gray-50 flex flex-row items-center justify-center gap-1.5 active:scale-[0.98]"
-                    >
-                        <UserPlus size={12} />
-                        分享他测
-                    </button>
-
-                    {/* 4. Export */}
+                    {/* Export - Full Width */}
                     <button
                         onClick={handleGenerateImage}
                         disabled={isGenerating}
-                        className={`py-2 bg-gradient-to-r from-brand-orange to-brand-pink text-white rounded-lg font-bold text-[10px] shadow-sm active:scale-[0.98] transition-transform flex flex-row items-center justify-center gap-1.5 ${isGenerating ? 'opacity-70 cursor-wait' : ''}`}
+                        className={`w-full py-3 bg-gradient-to-r from-brand-orange to-brand-pink text-white rounded-lg font-bold text-xs shadow-sm active:scale-[0.98] transition-transform flex flex-row items-center justify-center gap-1.5 ${isGenerating ? 'opacity-70 cursor-wait' : ''}`}
                     >
-                        {isGenerating ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Share2 size={12} />}
-                        {isGenerating ? '生成中...' : '生成说明书'}
+                        {isGenerating ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Share2 size={14} />}
+                        {isGenerating ? '生成中...' : '生成我的人格说明书'}
                     </button>
                 </div>
             </div>
