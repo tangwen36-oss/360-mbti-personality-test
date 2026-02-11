@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 
 const Home: React.FC = () => {
@@ -7,6 +7,15 @@ const Home: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+
+    // 从 URL ?token=xxx 自动填入邀请码
+    useEffect(() => {
+        const urlToken = searchParams.get('token');
+        if (urlToken) {
+            setToken(urlToken.trim());
+        }
+    }, [searchParams]);
 
     const handleStart = async () => {
         const code = token.trim();
