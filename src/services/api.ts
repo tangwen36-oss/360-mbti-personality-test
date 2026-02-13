@@ -1381,10 +1381,10 @@ function calculateDimensionAnalysis(
     };
     const getTiFieDesc = (level: MatchLevel) => {
         switch (level) {
-            case 'high': return '你在逻辑与人情之间的处理方式，别人看得很准。你对外展现的社交态度，和你内心的真实偏好基本一致。';
+            case 'high': return '你在逻辑与人情之间的处理方式，别人看得很准。你对外展现的思维态度，和你内心的真实偏好基本一致。';
             case 'medium': return '别人大体理解你的社交偏好，但可能低估了你偶尔的不耐烦感或者高估了你的社交热情。';
-            case 'mixed': return '你在社交中的理性面和感性面切换较大。有些人觉得你很好相处，另一些人觉得你难以接近——两种感受可能都是对的。';
-            case 'low': return '你的内在逻辑倾向和对外社交形象之间存在显著落差。你可能表面上很随和温暖，但骨子里更看重逻辑和效率——或反过来。';
+            case 'mixed': return '你在理性思辨和感性共情之间切换较大。有些人觉得你很好相处，另一些人觉得你难以接近——两种感受可能都是对的。';
+            case 'low': return '你的内在逻辑倾向和对外展现的形象之间存在显著落差。你可能表面上很随和温暖，但骨子里更看重逻辑和效率——或反过来。';
         }
     };
     const getSeNiDesc = (level: MatchLevel) => {
@@ -1424,7 +1424,7 @@ function calculateDimensionAnalysis(
             desc: getTeiFiDesc(getMatchLevel(tefiSelf, tefiPeer)),
         },
         {
-            label: '社交',
+            label: '思维',
             left: 'Ti (逻辑)',
             right: 'Fe (共情)',
             selfValue: tifeSelf,
@@ -1432,7 +1432,7 @@ function calculateDimensionAnalysis(
             desc: getTiFieDesc(getMatchLevel(tifeSelf, tifePeer)),
         },
         {
-            label: '感知',
+            label: '关注',
             left: 'Se (体验)',
             right: 'Ni (洞察)',
             selfValue: seniSelf,
