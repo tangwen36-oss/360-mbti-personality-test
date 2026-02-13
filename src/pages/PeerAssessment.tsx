@@ -3,14 +3,12 @@ import { useParams } from 'react-router-dom';
 import { ChevronLeft, CheckCircle2 } from 'lucide-react';
 import api from '../services/api';
 
-// 他测题目类型
+// 他测题目类型（多选项格式，与自测一致）
 interface PeerQuestion {
     id: number;
     text: string;
-    option_a: string;
-    option_b: string;
-    value_a: string;
-    value_b: string;
+    options: string[];
+    values: string[];
 }
 
 // 视图状态类型
@@ -79,8 +77,10 @@ const PeerAssessment: React.FC = () => {
         setViewState('quiz');
     };
 
-    // 选择答案
-    const handleAnswer = async (value: string) => {
+    // 选择答案（通过选项索引获取对应 value）
+    const handleAnswer = async (optionIndex: number) => {
+        const currentQuestion = questions[currentQuestionIndex];
+        const value = currentQuestion.values?.[optionIndex] || '';
         const newAnswers = [...answers, value];
         setAnswers(newAnswers);
 
@@ -211,37 +211,33 @@ const PeerAssessment: React.FC = () => {
                             {currentQuestion.text}
                         </h2>
 
-                        {/* 二选一选项 */}
+                        {/* 多选项（2-4个） */}
                         <div className="space-y-4">
-                            {/* 选项 A */}
-                            <button
-                                onClick={() => handleAnswer(currentQuestion.value_a)}
-                                className="w-full p-5 bg-white rounded-2xl border-2 border-gray-100 hover:border-brand-pink hover:shadow-lg transition-all text-left active:scale-[0.98]"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <span className="w-8 h-8 rounded-full bg-brand-pink/10 text-brand-pink font-bold flex items-center justify-center text-sm">
-                                        A
-                                    </span>
-                                    <span className="text-gray-700 font-medium flex-1">
-                                        {currentQuestion.option_a}
-                                    </span>
-                                </div>
-                            </button>
-
-                            {/* 选项 B */}
-                            <button
-                                onClick={() => handleAnswer(currentQuestion.value_b)}
-                                className="w-full p-5 bg-white rounded-2xl border-2 border-gray-100 hover:border-brand-pink hover:shadow-lg transition-all text-left active:scale-[0.98]"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <span className="w-8 h-8 rounded-full bg-brand-orange/10 text-brand-orange font-bold flex items-center justify-center text-sm">
-                                        B
-                                    </span>
-                                    <span className="text-gray-700 font-medium flex-1">
-                                        {currentQuestion.option_b}
-                                    </span>
-                                </div>
-                            </button>
+                            {currentQuestion.options.map((opt, idx) => {
+                                const labels = ['A', 'B', 'C', 'D'];
+                                const colors = [
+                                    'bg-brand-pink/10 text-brand-pink',
+                                    'bg-brand-orange/10 text-brand-orange',
+                                    'bg-emerald-100 text-emerald-600',
+                                    'bg-purple-100 text-purple-600',
+                                ];
+                                return (
+                                    <button
+                                        key={idx}
+                                        onClick={() => handleAnswer(idx)}
+                                        className="w-full p-5 bg-white rounded-2xl border-2 border-gray-100 hover:border-brand-pink hover:shadow-lg transition-all text-left active:scale-[0.98]"
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <span className={`w-8 h-8 rounded-full ${colors[idx] || colors[0]} font-bold flex items-center justify-center text-sm shrink-0 mt-0.5`}>
+                                                {labels[idx]}
+                                            </span>
+                                            <span className="text-[15px] text-gray-700 font-medium flex-1">
+                                                {opt}
+                                            </span>
+                                        </div>
+                                    </button>
+                                );
+                            })}
                         </div>
 
                         {/* 底部返回按钮 - 与自测页面一致 */}

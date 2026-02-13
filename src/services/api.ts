@@ -27,6 +27,7 @@ export async function fetchQuestions(): Promise<Question[]> {
 
 /**
  * 从数据库获取他测题目 (category='peer')
+ * 新版使用 options/values 多选项格式（与自测一致）
  */
 export async function fetchPeerQuestions(): Promise<any[]> {
     const { data, error } = await supabase
@@ -40,14 +41,12 @@ export async function fetchPeerQuestions(): Promise<any[]> {
         throw error;
     }
 
-    // 映射数据库字段到前端接口（他测题目使用 option_a/option_b）
+    // 映射数据库字段到前端接口（使用 options/values 多选项格式）
     return (data || []).map((q: any) => ({
         id: q.id,
         text: q.text,
-        option_a: q.option_a,
-        option_b: q.option_b,
-        value_a: q.value_a,
-        value_b: q.value_b,
+        options: q.options || [],
+        values: q.values || [],
     }));
 }
 
@@ -1172,22 +1171,46 @@ export async function getReportById(id: string): Promise<ReportContent | null> {
  */
 export async function submitPeerAssessment(reportId: string, answers: string[]): Promise<boolean> {
     try {
-        // ========== 1. 八维认知功能计分 ==========
+        // ========== 1. 八维认知功能计分（含阴影区压缩） ==========
         const scores: Record<string, number> = {
             Se: 0, Si: 0, Ne: 0, Ni: 0, Te: 0, Ti: 0, Fe: 0, Fi: 0
         };
-        answers.forEach((val) => {
+
+        // 辅助函数：解析一条 value 字符串并累加到目标 scores
+        const parseAndAdd = (val: string, target: Record<string, number>) => {
             const parts = val.split(',');
             parts.forEach(part => {
                 const trimmed = part.trim();
                 if (trimmed.includes(':')) {
                     const [func, w] = trimmed.split(':');
-                    if (scores[func] !== undefined) {
-                        scores[func] += parseFloat(w);
+                    if (target[func] !== undefined) {
+                        target[func] += parseFloat(w);
                     }
                 }
             });
-        });
+        };
+
+        // 主区 Q1-Q16（前16题）正常计分
+        const mainEnd = Math.min(16, answers.length);
+        for (let i = 0; i < mainEnd; i++) {
+            parseAndAdd(answers[i], scores);
+        }
+
+        // 阴影区 Q17-Q20（后4题）单独计分，总分上限 1.5
+        if (answers.length > 16) {
+            const shadowScores: Record<string, number> = {
+                Se: 0, Si: 0, Ne: 0, Ni: 0, Te: 0, Ti: 0, Fe: 0, Fi: 0
+            };
+            for (let i = 16; i < answers.length; i++) {
+                parseAndAdd(answers[i], shadowScores);
+            }
+            const shadowSum = Object.values(shadowScores).reduce((a, b) => a + b, 0);
+            const shadowCap = 1.5;
+            const scale = shadowSum > shadowCap ? shadowCap / shadowSum : 1;
+            for (const func of Object.keys(shadowScores)) {
+                scores[func] += shadowScores[func] * scale;
+            }
+        }
 
         // ========== 功能栈加权匹配定型（同自测逻辑） ==========
         const FUNCTION_STACKS: Record<string, string[]> = {
