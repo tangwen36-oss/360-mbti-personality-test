@@ -1,0 +1,53 @@
+name: Keep Supabase Alive
+
+on:
+  schedule:
+    # 每 3 天运行一次 (UTC 时间 04:00，即北京时间 12:00)
+    - cron: '0 4 */3 * *'
+  workflow_dispatch: # 支持手动触发
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase (INSERT keepalive record)
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "${{ secrets.SUPABASE_URL }}/rest/v1/keepalive" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            -d '{"pinged_at": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}')
+
+          echo "HTTP Status: $response"
+
+          if [ "$response" -ge 200 ] && [ "$response" -lt 300 ]; then
+            echo "✅ Supabase keepalive ping 成功"
+          else
+            echo "❌ Supabase keepalive ping 失败 (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Cleanup old records (keep last 10)
+        run: |
+          # 查询第 10 条记录的时间作为删除阈值
+          threshold=$(curl -s \
+            -X GET "${{ secrets.SUPABASE_URL }}/rest/v1/keepalive?select=pinged_at&order=pinged_at.desc&offset=10&limit=1" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}")
+
+          echo "Threshold response: $threshold"
+
+          # 如果返回了记录，则删除更老的数据
+          if echo "$threshold" | grep -q "pinged_at"; then
+            cutoff=$(echo "$threshold" | grep -o '"pinged_at":"[^"]*"' | head -1 | cut -d'"' -f4)
+            echo "Deleting records older than: $cutoff"
+
+            curl -s -o /dev/null -w "Delete HTTP Status: %{http_code}\n" \
+              -X DELETE "${{ secrets.SUPABASE_URL }}/rest/v1/keepalive?pinged_at=lt.$cutoff" \
+              -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+              -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"
+          else
+            echo "Records ≤ 10, no cleanup needed."
+          fi
